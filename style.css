@@ -1,0 +1,19 @@
+#st-manga-console { padding: 10px 0; }
+#st-manga-console summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+#st-manga-console p { font-size: .9em; line-height: 1.6; overflow-wrap: anywhere; }
+#st-manga-console .manga-extension-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+#st-manga-console .menu_button { width: auto; white-space: normal; }
+.manga-director-form { display:flex; flex-direction:column; gap:10px; }
+.manga-director-form label { display:flex; flex-direction:column; gap:4px; font-size:13px; }
+.manga-director-form label.checkbox_label { flex-direction:row; align-items:center; }
+.manga-director-form input, .manga-director-form select, .manga-director-form textarea, #n5c-pane-preset details select { box-sizing:border-box; width:100%; max-width:100%; }
+.manga-director-form input[type=checkbox] { width:auto; }
+.manga-director-preview { min-height:160px; width:100%; resize:vertical; font:12px/1.5 monospace; }
+#n5c-pane-preset details { margin-top:16px; }
+#n5c-pane-preset details summary { cursor:pointer; margin-bottom:8px; }
+.n5c-tabs { overflow-x:auto; }
+.manga-cast-dialog { box-sizing:border-box; width:min(680px,94vw); max-height:88dvh; overflow:auto; border:1px solid #7884ad; border-radius:12px; padding:18px; background:#252936; color:#eee; }
+.manga-cast-dialog::backdrop { background:#0009; }
+.n5c-tabs .n5c-tab { white-space:nowrap; flex-shrink:0; }
+.manga-director-form .manga-extension-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.manga-director-form textarea, #n5c-pane-preset details textarea { box-sizing:border-box; background:var(--n5c-surface-panel,#34353c); color:inherit; border:1px solid #7776; border-radius:8px; padding:8px; }
