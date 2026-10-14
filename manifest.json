@@ -1,0 +1,11 @@
+{
+  "display_name": "漫画台插件版0.1版本",
+  "loading_order": 100,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "mieshidamowang",
+  "version": "0.1.0",
+  "homePage": "https://github.com/mieshidamowang/st-manga-console"
+}
