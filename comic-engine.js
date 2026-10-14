@@ -315,6 +315,14 @@ export async function startComicConsole(hostApi = {}) {
       try { return getId ? { type: "script", script_id: getId.fn() } : null; } catch (e) { return null; }
     },
     load: function () {
+      // Remove legacy browser credential copies; connections now live in the user file.
+      [STORAGE_KEY,INHERITED_STORAGE_KEY,PREVIOUS_STORAGE_KEY,LEGACY_STORAGE_KEY,OLDER_STORAGE_KEY,OLDEST_STORAGE_KEY,ANCIENT_STORAGE_KEY].forEach(function(key){
+        try { var old=JSON.parse(Env.pwin.localStorage.getItem(key)||'null');if(!old)return;
+          ['naiToken','connectionProfiles','activeConnectionId','customUrl'].forEach(function(k){delete old[k];});
+          if(old.styleId==='f4ab343e-9fea-4571-a1ee-23eca9c484d3')old.styleId='';
+          Env.pwin.localStorage.setItem(key,JSON.stringify(old));
+        } catch(error) {}
+      });
       var local = {}, remote = {};
       try { local = JSON.parse(Env.pwin.localStorage.getItem(STORAGE_KEY) || Env.pwin.localStorage.getItem(INHERITED_STORAGE_KEY) || Env.pwin.localStorage.getItem(PREVIOUS_STORAGE_KEY) || Env.pwin.localStorage.getItem(LEGACY_STORAGE_KEY) || Env.pwin.localStorage.getItem(OLDER_STORAGE_KEY) || Env.pwin.localStorage.getItem(OLDEST_STORAGE_KEY) || Env.pwin.localStorage.getItem(ANCIENT_STORAGE_KEY) || "{}") || {}; } catch (e) {}
       var opt = this.scopeOption(), getVars = getBoundFunction("getVariables");
@@ -361,6 +369,7 @@ export async function startComicConsole(hostApi = {}) {
   function connectionSnapshot() {
     return {
       schemaVersion: 1,
+      privacyReset20261014: true,
       connectionProfiles: state.connectionProfiles.map(function (p) {
         return Object.assign({ id: p.id, name: p.name }, connectionFields(p));
       }),
@@ -426,6 +435,10 @@ export async function startComicConsole(hostApi = {}) {
         var data;
         try { data = validateConnectionFile(await response.json()); }
         catch (e) { throw new Error("连接配置读取失败：" + e.message); }
+        if(!data.privacyReset20261014){
+          data={schemaVersion:1,privacyReset20261014:true,connectionProfiles:[],activeConnectionId:'',accountRotationEnabled:false};
+          await this.upload(data);
+        }
         commitConnections(data);
         this.serverPersisted = true;
       }

@@ -919,19 +919,6 @@
       "forbid_overrides": false
     },
     {
-      "identifier": "f4ab343e-9fea-4571-a1ee-23eca9c484d3",
-      "name": "画风-V5C",
-      "enabled": false,
-      "injection_position": 0,
-      "injection_depth": 4,
-      "injection_order": 100,
-      "role": "system",
-      "content": "[正面]\nartist:Yoneyama Mai‌, 0.6::artist:Horiguchi Yukiko::, 0.6::artist:boingoo::, 4::artist:yd::, artist:rella, artist:mx2j, void_0, artist:Msaka_12003, year2024, year2025, year2026, anime style, official art style, very aesthetic, masterpiece, amazing quality, no text, {best quality}, {amazing quality}, {very aesthetic}, {absurdres}, newest, year 2025, year 2026, {single frame}, cinematic still, {{cinematic lighting}}, solo, {serene}, [cool tones], film grain, {{{{radiant beauty}}}}, detailed skin, [skin texture],, very aesthetic, masterpiece, no text\n\n[负面]\nlowres, artistic error, film grain, scan artifacts, worst quality, bad quality, jpeg artifacts, very displeasing, chromatic aberration, dithering, halftone, screentone, multiple views, logo, too many watermarks, negative space, blank page, lowres,artistic error,film grain,scan artifacts,worst quality,bad quality,jpeg artifacts,very displeasing,chromatic aberration,dithering,halftone,screentone,multiple views,logo,too many watermarks,negative space,blank page,3::overexposure,heterochromia,sfw,censoring,censored,mosaic,extra characters,furry,multiple views,bad multiple views::,1.8::breasts apart,sagging breasts,hanging breasts::,{{{{{{{{{{chibi,chibi inset,doll,fumo (doll),{{{doll}}},{{{chibi}}},{{{toy}}},{{{animal}}},{{{head}}}}}}}}}}}}}{{{{bad anatomy}}}},{bad feet},bad hands,{{{bad proportions}}},{blurry},cloned face,cropped,{{{deformed}}},{{{disfigured}}},error,{{{extra arms}}},{extra digit},{{{extra legs}}},extra limbs,extra breasts,{{extra limbs,extra navels}},{fewer digits},{{{fused fingers,short fingers}}},gross proportions,ink eyes,ink hair,jpeg artifacts,{{{{long neck}}}},low quality,{malformed limbs},{{missing arms}},{missing fingers},{{missing legs}},{{{more than 2 nipples}}},mutated hands,{{{mutation}}},normal quality,owres,{{poorly drawn face}},{{poorly drawn hands}},reen eyes,signature,text,{{too many fingers}},{{{ugly}}},username,watermark,worst quality,{{{more than 2 legs}}},{{{furry girl}}},pubic hair,anal hair,fluffy belly,large feet,lime (fruit),bad-shaped foot,eyeshadow,fangs,{{{{{{small nipples,normal size nipples}}}}}},2::picture frame,fake video,fake photo,black bars::,side-by-side,lips,thick lips,red lips,pink lips,nostril,philtrum,nostrils,teeth,buck teeth,long_labia,ugly pussy\"",
-      "system_prompt": false,
-      "marker": false,
-      "forbid_overrides": false
-    },
-    {
       "identifier": "b092668d-1e9b-4924-b468-c51d34e0e008",
       "name": "━━破限尾部（自己缝） ━━",
       "enabled": true,
@@ -1569,10 +1556,6 @@
         },
         {
           "identifier": "af1a138a-b4d9-48f2-a362-7017c9e01ec8",
-          "enabled": false
-        },
-        {
-          "identifier": "f4ab343e-9fea-4571-a1ee-23eca9c484d3",
           "enabled": false
         },
         {

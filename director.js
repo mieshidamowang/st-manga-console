@@ -4,7 +4,7 @@ export const SETTINGS_KEY = 'mangaDirectorV2';
 const META_KEY = 'mangaDirectorPlansV2';
 const OUTPUT_RE = /\n?<!--n5c-output-start-->[\s\S]*?<!--n5c-output-end-->/g;
 const TOOL = 'deliver_comic_pages';
-const DEFAULTS = { baseUrl:'https://generativelanguage.googleapis.com/v1beta/openai', model:'', temperature:0.7, maxTokens:16000, timeout:180, contextMode:'recent', floors:6, from:0, to:-1, bodyTags:'zw,content,game,plot,dream,正文', excludeTags:'thinking,think,think_nya~,analysis,descriptive_analysis,tuiyan,ztl,xjc,Options', includeCharacter:true, includeDatabase:true, includeWorldbooks:false, toolTransport:true, auto:false, extra:'', maxInputChars:180000 };
+const DEFAULTS = { baseUrl:'', model:'', temperature:0.7, maxTokens:16000, timeout:180, contextMode:'recent', floors:6, from:0, to:-1, bodyTags:'zw,content,game,plot,dream,正文', excludeTags:'thinking,think,think_nya~,analysis,descriptive_analysis,tuiyan,ztl,xjc,Options', includeCharacter:true, includeDatabase:true, includeWorldbooks:false, toolTransport:true, auto:false, extra:'', maxInputChars:180000 };
 const clone = x => structuredClone(x);
 const idOf = p => p.id || p.identifier;
 export function orderedPrompts(preset) {
@@ -107,6 +107,15 @@ export class ComicDirector {
         if(!ctx.extensionSettings[SETTINGS_KEY])ctx.extensionSettings[SETTINGS_KEY]={config:clone(DEFAULTS)};
         this.store=ctx.extensionSettings[SETTINGS_KEY];this.config={...DEFAULTS,...this.store.config};
         if(!this.store.preset){const r=await fetch(new URL('./director-preset.json',import.meta.url));if(!r.ok)throw new Error('漫画模块加载失败');this.store.preset=await r.json();}
+        // Retire the removed bundled style, including saved user copies.
+        const removedStyle='f4ab343e-9fea-4571-a1ee-23eca9c484d3';
+        this.store.preset.prompts=this.store.preset.prompts.filter(p=>p.identifier!==removedStyle&&!/^(?:画风[-\s]*)?(?:V5C|5VC)$/i.test(p.name||''));
+        for(const group of this.store.preset.prompt_order||[])group.order=group.order.filter(p=>p.identifier!==removedStyle);
+        if(!this.store.privacyReset20261014){
+            this.config.baseUrl='';this.key='';
+            await this.saveKey();
+            this.store.privacyReset20261014=true;
+        }
         this.library=new CharacterLibrary(this);
         this.save();
         try{const r=await fetch('/user/files/manga-director-connection.json',{cache:'no-store'});if(r.ok){const data=await r.json();if(data.baseUrl===this.config.baseUrl)this.key=String(data.key||'');}}catch{/* Connection can still be entered manually. */}

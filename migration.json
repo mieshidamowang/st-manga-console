@@ -15,8 +15,9 @@
     "Request-local preset macros and prompt storage",
     "Configurable context floors and zw body extraction",
     "Chat metadata plans and source-preserving image backfill",
-    "Native role-preset switching independent of manga rules"
+    "Native role-preset switching independent of manga rules",
+    "Remove V5C style; clear saved connections once; mobile two-row tabs"
   ],
   "version": "2.0.0",
-  "prompt_entries": 99
+  "prompt_entries": 98
 }

@@ -23,4 +23,4 @@ const ctx={chat:[{mes:'story',swipe_id:0}],chatMetadata:{},getCurrentChatId:()=>
 const d=new ComicDirector(()=>ctx,()=>null);d.metadata()[0]={source:'story',swipe:0,plan:'A'};assert.ok(d.validRecord(0));ctx.chat[0].swipe_id=1;assert.equal(d.validRecord(0),null);ctx.chat[0].swipe_id=0;ctx.chat[0].mes='edited';assert.equal(d.validRecord(0),null);
 const original=JSON.parse(fs.readFileSync('manga-companion.json'));
 assert.deepEqual(preset.prompts,original.prompts);assert.deepEqual(preset.prompt_order,original.prompt_order);
-console.log('PASS: context ranges, zw extraction, isolated nested macros, protocol parsing, URL validation, stale swipe/body rejection, all 99 prompt entries preserved');
+console.log('PASS: context ranges, zw extraction, isolated nested macros, protocol parsing, URL validation, stale swipe/body rejection, all 98 remaining prompt entries preserved');
