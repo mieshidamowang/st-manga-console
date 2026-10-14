@@ -1,0 +1,22 @@
+{
+  "source": "1111",
+  "source_sha256": "c7bac4c5ebf046b47a8a7d1f68d1be62086d362507195097fb3e0de27465e706",
+  "source_script": "漫画台 v1.3.1",
+  "source_script_characters": 342386,
+  "reference": "https://github.com/damoshen123/st-chatu8",
+  "reference_code_copied": false,
+  "changes": [
+    "ES module lifecycle",
+    "Native event bridge and extension controls",
+    "Abort all image jobs on shutdown",
+    "Remove only manga script from companion preset",
+    "Safe first-run defaults; no API credentials bundled",
+    "Independent OpenAI-compatible comic director",
+    "Request-local preset macros and prompt storage",
+    "Configurable context floors and zw body extraction",
+    "Chat metadata plans and source-preserving image backfill",
+    "Native role-preset switching independent of manga rules"
+  ],
+  "version": "2.0.0",
+  "prompt_entries": 99
+}

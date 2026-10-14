@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Self-contained SillyTavern comic extension",
   "scripts": {
     "test": "node --test tests.mjs"
   }

@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import { CharacterLibrary, cleanRecord, matchRecords, splitCast } from './character-library.js';
+const d={store:{},save(){}};const lib=new CharacterLibrary(d);
+const alice=cleanRecord('characters',{nameCN:'林雪',nameEN:'Alice',aliases:'小雪',characterTraits:'silver hair',facialFeatures:'blue eyes',facialFeaturesBack:'hair bun',upperBodySFW:'adult woman',fullBodySFW:'long legs',upperBodySFWBack:'back shoulders',fullBodySFWBack:'back legs',defaultOutfit:'制服',negative:'wrong hair'});
+lib.data.characters=[alice,cleanRecord('characters',{nameCN:'林',nameEN:'Bob',characterTraits:'black hair'})];
+lib.data.outfits=[cleanRecord('outfits',{nameCN:'制服',owner:'Alice',upperBody:'blue shirt',fullBody:'black skirt',upperBodyBack:'blue shirt back',fullBodyBack:'black skirt back'}),cleanRecord('outfits',{nameCN:'制服',owner:'Bob',upperBody:'red shirt'})];
+assert.deepEqual(matchRecords(lib.data.characters,'林雪和小雪'),[alice]);
+assert.deepEqual(matchRecords(lib.data.characters,'malice bobcat'),[]);
+assert.deepEqual(matchRecords(lib.data.characters,'ALICE walks'),[alice]);
+let r=lib.resolve('[[cast:小雪|front|full|sfw|制服]], smiling');assert.match(r.positive,/blue eyes/);assert.match(r.positive,/black skirt/);assert.ok(!r.positive.includes('red shirt'));assert.equal(r.negative,'wrong hair');
+r=lib.resolve('[[cast:Alice|back|upper|sfw|制服]], walking');assert.match(r.positive,/hair bun/);assert.match(r.positive,/blue shirt back/);assert.ok(!r.positive.includes('blue eyes')&&!r.positive.includes('skirt'));
+r=lib.resolve('smiling','Alice');assert.match(r.positive,/silver hair/);assert.match(r.positive,/blue shirt/);
+assert.throws(()=>lib.resolve('Alice with Bob'),/多个角色/);
+assert.throws(()=>lib.resolve('[[cast:Alice]] [[cast:Bob]]'),/多个角色引用/);
+assert.equal(lib.resolve('[[cast:未知|front|full|sfw|]], green hair').positive,'未知, green hair');
+const parsed={structured:true,base:{prompt:'garden'},characters:[{characterId:'Alice',positive:'walking',negative:'bad hands'},{characterId:'Bob',positive:'sitting'}]};
+const applied=lib.apply(parsed);assert.equal(parsed.characters[0].positive,'walking');assert.match(applied.characters[0].positive,/silver hair/);assert.ok(!applied.characters[1].positive.includes('silver hair'));assert.match(applied.characters[0].negative,/bad hands, wrong hair/);assert.equal(applied.base.prompt,'garden');
+const text='<image>x</image><manga_cast>'+JSON.stringify({characters:[{nameCN:'新主角',major:true},{nameCN:'路人',major:false}],outfits:[{nameCN:'大衣',owner:'新主角'}]})+'</manga_cast>';
+assert.equal(splitCast(text).candidates.length,2);assert.equal(splitCast(text).text,'<image>x</image>');assert.throws(()=>splitCast('<manga_cast>{bad}</manga_cast>'),/JSON/);assert.throws(()=>splitCast('<manga_cast>{'),/不完整/);
+lib.data.characters[0].enabled=false;assert.equal(lib.resolve('Alice walking').positive,'Alice walking');
+console.log('PASS: alias and boundary matching, longest name, front/back and framing, outfit ownership, independent character injection, negative tags, disabled records, major candidates and malformed outputs');
+

@@ -1,7 +1,7 @@
 // Independent comic director. Chat presets are never modified by this module.
 import { CharacterLibrary, splitCast } from './character-library.js';
-export const SETTINGS_KEY = 'mangaConsoleOpen01';
-const META_KEY = 'mangaConsoleOpenPlans01';
+export const SETTINGS_KEY = 'mangaDirectorV2';
+const META_KEY = 'mangaDirectorPlansV2';
 const OUTPUT_RE = /\n?<!--n5c-output-start-->[\s\S]*?<!--n5c-output-end-->/g;
 const TOOL = 'deliver_comic_pages';
 const DEFAULTS = { baseUrl:'https://generativelanguage.googleapis.com/v1beta/openai', model:'', temperature:0.7, maxTokens:16000, timeout:180, contextMode:'recent', floors:6, from:0, to:-1, bodyTags:'zw,content,game,plot,dream,正文', excludeTags:'thinking,think,think_nya~,analysis,descriptive_analysis,tuiyan,ztl,xjc,Options', includeCharacter:true, includeDatabase:true, includeWorldbooks:false, toolTransport:true, auto:false, extra:'', maxInputChars:180000 };
@@ -55,7 +55,7 @@ export function parseCompletion(json) {
     if(typeof text!=='string'||!text.trim())throw new Error('模型未返回漫画文本'+(message?.refusal?'（服务返回拒绝）':''));
     return text;
 }
-// Expand supported macros in a request-local environment.
+// Resolve the attachment's setvar/getvar/roll macros in a request-local environment.
 export function macroCompiler(names={}) {
     const vars={};
     function expand(value,level=0){
@@ -85,8 +85,8 @@ export function buildMessages(preset,selected,config,material={}) {
     for(const row of orderedPrompts(preset)) {
         if(!row.enabled)continue;
         const id=idOf(row);
-        if(id==='comic-tool-description'||id==='comic-tool-field')continue;
-        if(!config.toolTransport&&id.startsWith('comic-tool-'))continue;
+        if(id==='ate-toolcall-guide-tool-desc'||id==='ate-toolcall-guide-field-desc')continue;
+        if(!config.toolTransport&&id.startsWith('ate-toolcall-'))continue;
         let content=row.content||'';
         if(row.marker||['chatHistory','charDescription','charPersonality','scenario','personaDescription','worldInfoBefore','worldInfoAfter','dialogueExamples'].includes(id)) {
             content=({chatHistory:history,charDescription:material.character,personaDescription:material.persona,worldInfoBefore:material.worldbooks,worldInfoAfter:material.database})[id]||'';
@@ -109,9 +109,9 @@ export class ComicDirector {
         if(!this.store.preset){const r=await fetch(new URL('./director-preset.json',import.meta.url));if(!r.ok)throw new Error('漫画模块加载失败');this.store.preset=await r.json();}
         this.library=new CharacterLibrary(this);
         this.save();
-        try{const r=await fetch('/user/files/manga-open-director-connection.json',{cache:'no-store'});if(r.ok){const data=await r.json();if(data.baseUrl===this.config.baseUrl)this.key=String(data.key||'');}}catch{/* Connection can still be entered manually. */}
+        try{const r=await fetch('/user/files/manga-director-connection.json',{cache:'no-store'});if(r.ok){const data=await r.json();if(data.baseUrl===this.config.baseUrl)this.key=String(data.key||'');}}catch{/* Connection can still be entered manually. */}
         const events=ctx.eventTypes,source=ctx.eventSource;
-        if(source&&events?.CHAT_CHANGED){const fn=()=>{this.cancel();this.engine?.stop();};source.on(events.CHAT_CHANGED,fn);this.unbind.push(()=>source.removeListener(events.CHAT_CHANGED,fn));}
+        if(source&&events?.CHAT_CHANGED){const fn=()=>this.cancel();source.on(events.CHAT_CHANGED,fn);this.unbind.push(()=>source.removeListener(events.CHAT_CHANGED,fn));}
     }
     save(){this.store.config=clone(this.config);this.ctx().saveSettingsDebounced?.();}
     getPreset(){return clone(this.store.preset);}
@@ -122,22 +122,22 @@ export class ComicDirector {
     metadata(){const c=this.ctx();c.chatMetadata||={};return c.chatMetadata[META_KEY]||={};}
     validRecord(id){const record=this.metadata()[id],message=this.ctx().chat[id];return record&&message&&record.source===stripOutput(message.mes)&&record.swipe===(message.swipe_id??0)?record:null;}
     async readMessages(...args){const list=await this.helper('getChatMessages')(...args);return list.map(m=>{const r=this.validRecord(m.message_id);return r?{...m,message:r.rendered||r.plan}:m;});}
-    async writeMessages(rows,options,guard=()=>true){
+    async writeMessages(rows,options){
         const chatId=this.chatId();
         const apply=async()=>{
-            if(this.chatId()!==chatId||!guard())throw new Error('聊天或正文已变化，已取消回填');
+            if(this.chatId()!==chatId)throw new Error('聊天已切换，已取消回填');
             const changes=[];
             const actual=rows.map(row=>{
                 const record=this.validRecord(row.message_id);
-                if(!record)throw new Error('当前楼层分镜已失效，已取消回填');
+                if(!record)return row;
                 const images=[...String(row.message).matchAll(/<div\b[^>]*class="(?:custom-)?n5c-page\b[^>]*>[\s\S]*?<\/div>/g)].map(m=>m[0]).join('\n');
-                changes.push([record,row.message,record.rendered]);
+                changes.push([record,row.message]);
                 return {...row,message:record.source+(images?'\n<!--n5c-output-start-->\n'+images+'\n<!--n5c-output-end-->':'')};
             });
-            // Native saveChat persists chat text and metadata in the same operation.
+            await this.helper('setChatMessages')(actual,options);
+            if(this.chatId()!==chatId)throw new Error('聊天已切换');
             for(const [record,text]of changes)record.rendered=text;
-            try{await this.helper('setChatMessages')(actual,options);}
-            catch(error){for(const [record,,previous]of changes)record.rendered=previous;throw error;}
+            await this.ctx().saveMetadata?.();
         };
         const next=this.writeQueue.then(apply);this.writeQueue=next.catch(()=>{});return next;
     }
@@ -164,7 +164,6 @@ export class ComicDirector {
         const selected=selectContext(this.ctx().chat,target,this.config),material=await this.material();
         if(chatId!==this.chatId())throw new Error('聊天已切换，请重新预览');
         const messages=buildMessages(this.getPreset(),selected,this.config,material);
-        if(this.engine?.directions)messages.push({role:'user',content:this.engine.directions()});
         messages.push({role:'user',content:this.library.prompt()});
         const chars=messages.reduce((n,m)=>n+m.content.length,0);
         if(chars>Number(this.config.maxInputChars))throw new Error(`待发送内容 ${chars} 字符，超过上限 ${this.config.maxInputChars}；请减少楼层或关闭世界书`);
@@ -176,8 +175,8 @@ export class ComicDirector {
         const body={model:this.config.model.trim(),messages,stream:false,temperature:Number(this.config.temperature),max_tokens:Number(this.config.maxTokens)};
         if(this.config.toolTransport){
             const rows=orderedPrompts(this.getPreset()),compile=macroCompiler();
-            const desc=compile(rows.find(p=>idOf(p)==='comic-tool-description')?.content||'Deliver complete comic text.');
-            const field=compile(rows.find(p=>idOf(p)==='comic-tool-field')?.content||'Complete comic page text.');
+            const desc=compile(rows.find(p=>idOf(p)==='ate-toolcall-guide-tool-desc')?.content||'Deliver complete comic text.');
+            const field=compile(rows.find(p=>idOf(p)==='ate-toolcall-guide-field-desc')?.content||'Complete comic page text.');
             body.tools=[{type:'function',function:{name:TOOL,description:desc,parameters:{type:'object',properties:{display_stream:{type:'string',description:field}},required:['display_stream']}}}];
             body.tool_choice={type:'function',function:{name:TOOL}};
         }
@@ -218,7 +217,6 @@ export class ComicDirector {
         }finally{clearTimeout(timer);if(this.controller===controller)this.controller=null;}
     }
     async plan(target=this.latest(),force=false){
-        if(this.engine?.busy)throw new Error('生图正在执行，请先中止或等待完成');
         if(this.controller)throw new Error('编剧任务正在执行，请等待或中止');
         if(!force&&this.validRecord(target))return;
         if(!Number.isFinite(Number(this.config.timeout))||Number(this.config.timeout)<1)throw new Error('超时必须大于 0 秒');
@@ -246,7 +244,7 @@ export class ComicDirector {
         }catch(error){this.setStatus(error.name==='AbortError'?'编剧请求已中止或超时':error.message);throw error;}
         finally{clearTimeout(timeout);if(this.controller===controller)this.controller=null;}
     }
-    async ensurePlan(target){const msg=this.ctx().chat[target];if(!msg||msg.is_user||msg.is_system)return;if(this.validRecord(target))return;await this.plan(target);}
+    async ensurePlan(target){const msg=this.ctx().chat[target];if(!msg||msg.is_user||msg.is_system)return;if(this.validRecord(target))return;if(/<image>[\s\S]*?<\/image>/i.test(msg.mes||''))return;await this.plan(target);}
     async generate(options){
         const target=this.latest();await this.ensurePlan(target);
         const result=await this.engine.renderMessage(target,options||{},p=>this.setStatus(`生图：${p.phase}${p.page?' 第 '+p.page+' 页':''}${p.error?' · '+p.error:''}`));
@@ -262,7 +260,7 @@ export class ComicDirector {
     async saveKey(){
         const ctx=this.ctx(),value=JSON.stringify({baseUrl:this.config.baseUrl,key:this.key});
         const bytes=new TextEncoder().encode(value);let str='';for(const b of bytes)str+=String.fromCharCode(b);
-        const r=await fetch('/api/files/upload',{method:'POST',headers:ctx.getRequestHeaders(),body:JSON.stringify({name:'manga-open-director-connection.json',data:btoa(str)})});
+        const r=await fetch('/api/files/upload',{method:'POST',headers:ctx.getRequestHeaders(),body:JSON.stringify({name:'manga-director-connection.json',data:btoa(str)})});
         if(!r.ok)throw new Error('独立连接保存失败');this.setStatus('独立 Key 已保存到当前酒馆用户文件');
     }
     mount(pane){
@@ -282,7 +280,7 @@ export class ComicDirector {
         field('最近楼层数','floors','number');field('起始楼层（从 0 计数）','from','number');field('结束楼层（-1 为目标楼层）','to','number');
         field('正文标签（逗号分隔；匹配不到则读取清理后的整层）','bodyTags');field('排除标签（逗号分隔）','excludeTags');field('输入字符上限（超出时报错，不静默截断）','maxInputChars','number');
         check('附带角色卡和用户设定','includeCharacter');check('附带数据库表格（只读）','includeDatabase');check('附带绑定世界书的全部启用条目（不模拟酒馆触发器）','includeWorldbooks');
-        check('工具传输（接口不支持时关闭）','toolTransport');
+        check('工具传输 / 防截断（沿用原 ToolCall 引导；不支持时关闭）','toolTransport');
         check('正文完成后自动编剧并生图（会调用两个 API）','auto');
         field('本次改编补充要求','extra','textarea');
         const preview=node('textarea');preview.readOnly=true;preview.className='text_pole manga-director-preview';preview.setAttribute('aria-label','待发送内容或分镜结果');
@@ -295,7 +293,7 @@ export class ComicDirector {
         );form.append(actions,status,preview,node('p','预设标签中的漫画选项与全部提示词独立保存，不会改写当前正文预设。Key 不包含在导出文件中。','n5c-hint'));pane.append(form);
     }
     mountEditor(pane){
-        const details=node('details'),summary=node('summary','原创漫画提示词（高级编辑）');details.append(summary);
+        const details=node('details'),summary=node('summary','全部漫画提示词 / 原传输引导（高级编辑）');details.append(summary);
         const list=node('select');list.setAttribute('aria-label','漫画提示词条目');
         const rows=orderedPrompts(this.getPreset());list.append(...rows.map(p=>new Option(p.name,idOf(p))));
         const enabled=node('input');enabled.type='checkbox';const enabledLabel=node('label','启用当前条目');enabledLabel.prepend(enabled);
